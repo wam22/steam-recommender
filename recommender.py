@@ -170,3 +170,37 @@ class recommender(object):
     def getRandomGame(self):
         return self.games_df.iloc[random.randint(0,len(self.getAllGames()))]["Game"]
 
+        # Check how similar 2 users are, returns score in range [-1,1]
+    def simUsers(a,b):
+        similar_games = getSimilarGames(a,b)
+        if len(similar_games) == 0 or len(similar_games) == 1:
+            return -1
+        ratings_a = {}
+        ratings_b = {}
+        ratings_a_avg = 0.0
+        ratings_b_avg = 0.0
+        for game in similar_games:
+            hours_a = getHoursPlayed(a,game)
+            hours_b = getHoursPlayed(b,game)
+            ratings_a_avg += hours_a
+            ratings_b_avg += hours_b
+            ratings_a[game] = hours_a
+            ratings_b[game] = hours_b
+        ratings_a_avg = ratings_a_avg / float(len(similar_games))
+        ratings_b_avg = ratings_b_avg / float(len(similar_games))
+
+        #subtract the average from every "rating"
+        for key,value in ratings_a.items():
+            ratings_a[key] -= ratings_a_avg
+        for key,value in ratings_b.items():
+            ratings_b[key] -= ratings_b_avg
+            
+        num = sumMultiplyDict(ratings_a,ratings_b)
+        sda = sumDict(ratings_a)
+        sdb = sumDict(ratings_b)
+        if sdb == 0.0:
+            sdb = 0.000001
+        if sda == 0.0:
+            sda = 0.000001
+        denom = float(sda*sdb)
+        return num/denom
