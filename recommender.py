@@ -205,17 +205,6 @@ class recommender(object):
         denom = (den_a**(1/2.0)) * (den_b**(1/2.0))
         return numer/float(denom)
 
-    def getRUI(self,u,i):
-        numer = 0.0
-        denom = 0.0
-        I = self.getOwnedGamesID(u)
-        for j in I:
-            sim_items = self.simItems(i,j)
-            rating = self.getHoursPlayed(u,j)
-            numer += rating*sim_items
-            denom += sim_items
-        return numer/denom
-
     def simItems(self,a,b):
         similar_players = self.getSimilarPlayers(a,b)
         if len(similar_players) == 0 or len(similar_players) == 1:
@@ -235,17 +224,30 @@ class recommender(object):
         ratings_b_avg = ratings_b_avg / float(len(similar_players))
 
         #subtract the average from every "rating"
-        for key,value in ratings_a.items():
+        for key,_ in ratings_a.items():
             ratings_a[key] -= ratings_a_avg
-        for key,value in ratings_b.items():
+        for key,_ in ratings_b.items():
             ratings_b[key] -= ratings_b_avg
+
+        numer = 0
+        den_a = 0
+        den_b = 0
+        for r_a,r_b in zip(ratings_a,ratings_b):
+            num += r_a*r_b   
+            den_a += r_a**2
+            den_b += r_b**2
+        denom = (den_a**(1/2.0)) * (den_b**(1/2.0))
+        return numer/float(denom)
             
-        num = self.sumMultiplyDict(ratings_a,ratings_b)
-        sda = self.sumDict(ratings_a)
-        sdb = self.sumDict(ratings_b)
-        if sdb == 0.0:
-            sdb = 0.1
-        if sda == 0.0:
-            sda = 0.1
-        denom = float(sda*sdb)
-        return num/denom
+    def getRUI(self,u,i):
+        numer = 0.0
+        denom = 0.0
+        I = self.getOwnedGamesID(u)
+        for j in I:
+            sim_items = self.simItems(i,j)
+            if(sim_items <= 0):
+                continue
+            rating = self.getHoursPlayed(u,j)
+            numer += rating*sim_items
+            denom += sim_items
+        return numer/denom
