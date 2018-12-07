@@ -170,9 +170,25 @@ class recommender(object):
     def getRandomGame(self):
         return self.games_df.iloc[random.randint(0,len(self.getAllGames()))]["Game"]
 
-        # Check how similar 2 users are, returns score in range [-1,1]
-    def simUsers(a,b):
-        similar_games = getSimilarGames(a,b)
+    # Used for numerator in simxy algorithm
+    def sumMultiplyDict(self,A,B):
+        total = 0
+        for key,value in A.items():
+            a = value
+            b = B[key]
+            total += a*b
+        return total
+
+    # Used for denominator in simxy algorithm
+    def sumDict(self,A):
+        total = 0
+        for key,value in A.items():
+            total += value**2
+        return total**(1/2.0)
+
+    # Check how similar 2 users are, returns score in range [-1,1]    
+    def simUsers(self,a,b):
+        similar_games = self.getSimilarGames(a,b)
         if len(similar_games) == 0 or len(similar_games) == 1:
             return -1
         ratings_a = {}
@@ -180,8 +196,8 @@ class recommender(object):
         ratings_a_avg = 0.0
         ratings_b_avg = 0.0
         for game in similar_games:
-            hours_a = getHoursPlayed(a,game)
-            hours_b = getHoursPlayed(b,game)
+            hours_a = self.getHoursPlayed(a,game)
+            hours_b = self.getHoursPlayed(b,game)
             ratings_a_avg += hours_a
             ratings_b_avg += hours_b
             ratings_a[game] = hours_a
@@ -195,12 +211,58 @@ class recommender(object):
         for key,value in ratings_b.items():
             ratings_b[key] -= ratings_b_avg
             
-        num = sumMultiplyDict(ratings_a,ratings_b)
-        sda = sumDict(ratings_a)
-        sdb = sumDict(ratings_b)
+        num = self.sumMultiplyDict(ratings_a,ratings_b)
+        sda = self.sumDict(ratings_a)
+        sdb = self.sumDict(ratings_b)
         if sdb == 0.0:
             sdb = 0.000001
         if sda == 0.0:
             sda = 0.000001
         denom = float(sda*sdb)
         return num/denom
+
+    def getRUI(self,u,i):
+        numer = 0.0
+        denom = 0.0
+        I = self.getOwnedGamesID(u)
+        for j in I:
+            sim_items = self.simItems(i,j)
+            rating = self.getHoursPlayed(u,j)
+            numer += rating*sim_items
+            denom += sim_items
+        return numer/denom
+
+    # Not used for current engine design, grounds for removal
+    # def simItems(self,a,b):
+    #     similar_players = self.getSimilarPlayers(a,b)
+    #     if len(similar_players) == 0 or len(similar_players) == 1:
+    #         return -1
+    #     ratings_a = {}
+    #     ratings_b = {}
+    #     ratings_a_avg = 0.0
+    #     ratings_b_avg = 0.0
+    #     for player in similar_players:
+    #         hours_a = self.getHoursPlayed(player,a)
+    #         hours_b = self.getHoursPlayed(player,b)
+    #         ratings_a_avg += hours_a
+    #         ratings_b_avg += hours_b
+    #         ratings_a[player] = hours_a
+    #         ratings_b[player] = hours_b
+    #     ratings_a_avg = ratings_a_avg / float(len(similar_players))
+    #     ratings_b_avg = ratings_b_avg / float(len(similar_players))
+
+    #     #subtract the average from every "rating"
+    #     for key,value in ratings_a.items():
+    #         ratings_a[key] -= ratings_a_avg
+    #     for key,value in ratings_b.items():
+    #         ratings_b[key] -= ratings_b_avg
+            
+    #     num = self.sumMultiplyDict(ratings_a,ratings_b)
+    #     sda = self.sumDict(ratings_a)
+    #     sdb = self.sumDict(ratings_b)
+    #     if sdb == 0.0:
+    #         sdb = 0.1
+    #     if sda == 0.0:
+    #         sda = 0.1
+    #     denom = float(sda*sdb)
+    #     return num/denom
