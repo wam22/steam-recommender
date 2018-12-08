@@ -1,6 +1,8 @@
 from recommender import recommender
 from predictor import predictor
 import random
+
+# Testing the recommendation engine on a non-existent user
 def main():
     R = recommender()
     P = predictor()
