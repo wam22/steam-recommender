@@ -199,56 +199,85 @@ class predictor(object):
             den_b += r_b**2
         denom = (den_a**(1/2.0)) * (den_b**(1/2.0))
         return numer/float(denom)
-
-    def simItems(self,a,b):
-        similar_players = self.getSimilarPlayers(a,b)
-        if len(similar_players) == 0 or len(similar_players) == 1:
+            
+    def getRUI(self,u,i):
+        numer = 0.0
+        denom = 0.0
+        U = self.getOwners(i)
+        for v in U:
+            sim_users = self.simUsers(u,v)
+            # if(sim_users <= 0):
+            #     continue
+            rating = self.getHoursPlayed(v,i)
+            numer += rating*sim_users
+            denom += sim_users
+            print("SIM",sim_users)
+            print("num",numer)
+        return numer/denom
+    
+    def simUsersNewUser(self,a_library,b):
+        a_owned_games = []
+        for gameid,_ in a_library.items():
+            a_owned_games.append(gameid)
+        similar_games = []
+        b_owned_games = self.getOwnedGamesID(b)
+        for ga in a_owned_games:
+            if ga in b_owned_games:
+                similar_games.append(ga)
+        if len(similar_games) == 0 or len(similar_games) == 1:
             return -1
         ratings_a = {}
         ratings_b = {}
         ratings_a_avg = 0.0
         ratings_b_avg = 0.0
-        for player in similar_players:
-            hours_a = self.getHoursPlayed(player,a)
-            hours_b = self.getHoursPlayed(player,b)
+        for game in similar_games:
+            hours_a = a_library[game]
+            hours_b = self.getHoursPlayed(b,game)
             ratings_a_avg += hours_a
             ratings_b_avg += hours_b
-            ratings_a[player] = hours_a
-            ratings_b[player] = hours_b
-        ratings_a_avg = ratings_a_avg / float(len(similar_players))
-        ratings_b_avg = ratings_b_avg / float(len(similar_players))
+            ratings_a[game] = hours_a
+            ratings_b[game] = hours_b
+        ratings_a_avg = ratings_a_avg / float(len(similar_games))
+        ratings_b_avg = ratings_b_avg / float(len(similar_games))
 
         #subtract the average from every "rating"
         for key,_ in ratings_a.items():
             ratings_a[key] -= ratings_a_avg
         for key,_ in ratings_b.items():
             ratings_b[key] -= ratings_b_avg
-
+            
         numer = 0
         den_a = 0
         den_b = 0
         for r_a,r_b in zip(ratings_a,ratings_b):
-            num += r_a*r_b   
+            numer += r_a*r_b   
             den_a += r_a**2
             den_b += r_b**2
         denom = (den_a**(1/2.0)) * (den_b**(1/2.0))
         return numer/float(denom)
-            
-    def getRUI(self,u,i):
+    
+    def getRUInewUser(self,user_library,i):
         numer = 0.0
         denom = 0.0
-        I = self.getOwnedGamesID(u)
-        for j in I:
-            sim_items = self.simItems(i,j)
-            if(sim_items <= 0):
-                continue
-            rating = self.getHoursPlayed(u,j)
-            numer += rating*sim_items
-            denom += sim_items
+        U = self.getOwners(i)
+        for v in U:
+            sim_users = self.simUsersNewUser(user_library,v)
+            # if(sim_users <= 0):
+            #     continue
+            rating = self.getHoursPlayed(v,i)
+            numer += rating*sim_users
+            denom += sim_users
+            # print("SIM",sim_users)
+            # print("num",numer)
         return numer/denom
 
     def test(self):
-        randomUser = rec.getRandomUser()
-        randomGame = rec.getRandomGame()
-        pred = rec.getRUI(randomUser,randomGame)
+        randomUser = 280819916#self.getRandomUser()
+        randomGame = self.getRandomGame()
+        ownedGames = self.getOwnedGamesName(randomUser)
+        print(randomUser,"Owned Games:",ownedGames)
+        print(randomUser,"Owned Games:",self.getOwnedGamesID(randomUser))
+        randomGameID = 65218#self.getGameID(randomGame)
+        print("Random GameID:",randomGameID)
+        pred = self.getRUI(randomUser,randomGameID)
         return "Predicted score of user",randomUser,"for game",randomGame,":",pred
