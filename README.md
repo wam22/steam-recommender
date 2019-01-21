@@ -1,5 +1,5 @@
 # steam-recommender
-A recommendation engine for Steam videogames written in Python 3
+A recommendation engine for Steam video games written in Python 3
 
 Uses a dataset containing 200,000 entries of user behavior (game purchase & playing) from Kaggle. You can get the original datset [here](https://www.kaggle.com/tamber/steam-video-games) or simply clone this repo.
 
